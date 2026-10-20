@@ -10,6 +10,8 @@ topics:
   - shader
   - card
 screenshots:
+  - description: Demo recorded on a phone, tilting between effects.
+    path: screenshots/demo.gif
   - description: The five built-in effects on sample cards, tilted.
     path: screenshots/effects.png
 

@@ -5,13 +5,13 @@ gyroscope, with a moving glare and a holographic foil that shifts as it turns,
 like a foil trading card catching the light. Pure Flutter, no network, no
 image assets.
 
-<!-- TODO: replace with a recorded GIF: screenshots/rainbow.gif -->
-> 🎞️ **GIF placeholder:** `screenshots/rainbow.gif` (rainbow card tilting)
+![Demo recorded on a phone](screenshots/demo.gif)
+
+[Watch the full demo video](https://github.com/HammasT1/holo_card/raw/main/media/demo.mp4)
 
 ![The five built-in effects](screenshots/effects.png)
 
-<!-- TODO: replace with your deployed demo URL -->
-**Live demo:** _placeholder_ — `https://HammasT1.github.io/holo_card/`
+**Live web demo:** https://hammast1.github.io/holo_card/
 
 ## Quick start
 
