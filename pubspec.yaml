@@ -1,0 +1,33 @@
+name: holo_card
+description: Wrap any widget in a 3D collectible card that tilts with touch, mouse or gyroscope, with a glare and a holographic foil shader effect.
+version: 0.1.0
+repository: https://github.com/HammasT1/holo_card
+issue_tracker: https://github.com/HammasT1/holo_card/issues
+topics:
+  - animation
+  - ui
+  - effects
+  - shader
+  - card
+screenshots:
+  - description: The five built-in effects on sample cards, tilted.
+    path: screenshots/effects.png
+
+environment:
+  sdk: ^3.6.0
+  flutter: ">=3.27.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  sensors_plus: ^7.1.1
+  sensors_plus_platform_interface: ^2.0.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  shaders:
+    - shaders/holo_foil.frag
