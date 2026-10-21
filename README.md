@@ -11,7 +11,7 @@ image assets.
 
 ![The five built-in effects](screenshots/effects.png)
 
-**Live web demo:** https://hammast1.github.io/holo_card/
+**Check it on pub.dev:** (https://pub.dev/packages/holo_card)
 
 ## Quick start
 
