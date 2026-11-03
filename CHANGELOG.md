@@ -1,3 +1,8 @@
+## Unreleased
+
+* Pause the gyroscope while the app is in the background or the card is hidden
+  (`TickerMode` disabled), and resume it when the card is visible again.
+
 ## 0.1.0
 
 * Initial release.

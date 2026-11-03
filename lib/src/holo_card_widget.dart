@@ -80,6 +80,9 @@ class HoloCard extends StatefulWidget {
 
   /// Whether to tilt with the device gyroscope. Only has an effect on Android
   /// and iOS; ignored on every other platform and in the browser.
+  /// The sensor is only read while the app is in the foreground and the card
+  /// is visible to the ticker (not covered by another route or in an offstage
+  /// tab), and is paused otherwise.
   final bool enableGyroscope;
 
   /// Whether to tilt with the pointer: hover for mouse, drag for touch.
@@ -102,7 +105,7 @@ class HoloCard extends StatefulWidget {
 }
 
 class _HoloCardState extends State<HoloCard>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   final ManualTiltSource _pointer = ManualTiltSource();
   GyroscopeTiltSource? _gyro;
   late final TiltEngine _engine;
@@ -111,11 +114,18 @@ class _HoloCardState extends State<HoloCard>
   Offset _lastReportedTilt = Offset.zero;
   ui.FragmentProgram? _program;
   bool _reducedMotion = false;
+  // The gyroscope only runs while the app is in the foreground and the card's
+  // subtree is ticking (not covered by another route or in an offstage tab).
+  bool _appActive = true;
+  bool _tickerEnabled = true;
   int? _pointerId;
 
   @override
   void initState() {
     super.initState();
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    _appActive = lifecycle == null || lifecycle == AppLifecycleState.resumed;
+    WidgetsBinding.instance.addObserver(this);
     _engine = TiltEngine(sources: [_pointer], onWake: _wake);
     _ticker = createTicker(_onTick);
     _engine.frame.addListener(_reportTilt);
@@ -124,18 +134,28 @@ class _HoloCardState extends State<HoloCard>
       if (mounted && program != null) setState(() => _program = program);
     });
     _syncController();
-    _syncGyro();
+    // The gyroscope is started from didChangeDependencies, which runs right
+    // after this and knows about reduced motion and TickerMode.
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final reduced = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
-    if (reduced != _reducedMotion) {
-      _reducedMotion = reduced;
-      _syncGyro();
-    }
+    _reducedMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    // `TickerMode.valuesOf` replaces this but needs Flutter 3.35; the package
+    // supports 3.27.
+    // ignore: deprecated_member_use
+    _tickerEnabled = TickerMode.of(context);
+    _syncGyro();
     _syncController();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final active = state == AppLifecycleState.resumed;
+    if (active == _appActive) return;
+    _appActive = active;
+    _syncGyro();
   }
 
   @override
@@ -152,6 +172,7 @@ class _HoloCardState extends State<HoloCard>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     widget.controller?.removeListener(_syncController);
     _engine.frame.removeListener(_reportTilt);
     _ticker.dispose();
@@ -171,8 +192,11 @@ class _HoloCardState extends State<HoloCard>
   }
 
   void _syncGyro() {
-    final wanted =
-        widget.enableGyroscope && !_reducedMotion && gyroscopeSupported;
+    final wanted = widget.enableGyroscope &&
+        !_reducedMotion &&
+        _appActive &&
+        _tickerEnabled &&
+        gyroscopeSupported;
     if (wanted && _gyro == null) {
       _gyro = GyroscopeTiltSource()..start();
       _engine.addSource(_gyro!);

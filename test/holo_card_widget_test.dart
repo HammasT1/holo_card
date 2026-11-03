@@ -75,6 +75,8 @@ void main() {
   });
 
   tearDown(() {
+    TestWidgetsFlutterBinding.instance
+        .handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     debugGyroStreamFactory = null;
     FoilShader.resetForTesting();
   });
@@ -492,6 +494,81 @@ void main() {
       await tester.pumpWidget(build(true));
       expect(stream.hasListener, isTrue);
       await tester.pumpWidget(build(false));
+      expect(stream.hasListener, isFalse);
+      await stream.close();
+    });
+
+    _test('pauses while the app is in the background and resumes after',
+        (tester) async {
+      final stream = StreamController<GyroSample>.broadcast();
+      debugGyroStreamFactory = () => stream.stream;
+      await tester.pumpWidget(_app(HoloCard(
+        idleAnimation: false,
+        child: _content(),
+      )));
+      expect(stream.hasListener, isTrue);
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump();
+      expect(stream.hasListener, isFalse);
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+      expect(stream.hasListener, isTrue);
+
+      await tester.pumpWidget(const SizedBox());
+      expect(stream.hasListener, isFalse);
+      await stream.close();
+    });
+
+    _test('does not start in the background and starts when resumed',
+        (tester) async {
+      final stream = StreamController<GyroSample>.broadcast();
+      debugGyroStreamFactory = () => stream.stream;
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pumpWidget(_app(HoloCard(
+        idleAnimation: false,
+        child: _content(),
+      )));
+      expect(stream.hasListener, isFalse);
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+      expect(stream.hasListener, isTrue);
+
+      await tester.pumpWidget(const SizedBox());
+      await stream.close();
+    });
+
+    _test('pauses while the card is hidden by TickerMode', (tester) async {
+      final stream = StreamController<GyroSample>.broadcast();
+      debugGyroStreamFactory = () => stream.stream;
+      Widget build(bool enabled) => _app(TickerMode(
+            enabled: enabled,
+            child: HoloCard(idleAnimation: false, child: _content()),
+          ));
+      await tester.pumpWidget(build(true));
+      expect(stream.hasListener, isTrue);
+      await tester.pumpWidget(build(false));
+      expect(stream.hasListener, isFalse);
+      await tester.pumpWidget(build(true));
+      expect(stream.hasListener, isTrue);
+
+      await tester.pumpWidget(const SizedBox());
+      await stream.close();
+    });
+
+    _test('resuming does not start a disabled gyroscope', (tester) async {
+      final stream = StreamController<GyroSample>.broadcast();
+      debugGyroStreamFactory = () => stream.stream;
+      await tester.pumpWidget(_app(HoloCard(
+        enableGyroscope: false,
+        idleAnimation: false,
+        child: _content(),
+      )));
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
       expect(stream.hasListener, isFalse);
       await stream.close();
     });
